@@ -261,10 +261,6 @@ class ProyectoGestionService
             'asignacion_ct' => (bool) $item->asignacion_ct,
             'calificacion' => $item->calificacion !== null ? (string) $item->calificacion : '',
             'fecha_aprobacion' => $item->fecha_aprobacion?->format('Y-m-d') ?? '',
-            'linea_investigacion_id' => (string) $item->linea_investigacion_id,
-            'metodologia_id' => (string) $item->metodologia_id,
-            'tipo_publicacion_id' => (string) $item->tipo_publicacion_id,
-            'tipo_investigacion_id' => (string) $item->tipo_investigacion_id,
             'comunidad_id' => (string) $item->comunidad_id,
             'equipo_seccion_clave' => $item->equipo_ref ?? '',
             'filterLapsoEquipo' => $partes ? (string) $partes['lap_codigo'] : '',
@@ -294,14 +290,10 @@ class ProyectoGestionService
             'fecha_subida' => $datos['fecha_subida'],
             'asignacion_ct' => (bool) ($datos['asignacion_ct'] ?? false),
             'calificacion' => ($datos['calificacion'] ?? '') !== '' ? (int) $datos['calificacion'] : null,
-            'fecha_aprobacion' => ($datos['fecha_aprobacion'] ?? '') !== '' ? $datos['fecha_aprobacion'] : null,
-            'linea_investigacion_id' => $datos['linea_investigacion_id'],
-            'metodologia_id' => $datos['metodologia_id'],
-            'tipo_publicacion_id' => $datos['tipo_publicacion_id'],
-            'tipo_investigacion_id' => $datos['tipo_investigacion_id'],
+            'fecha_aprobacion' => ($datos['fecha_aprobacion'] ?? '') !== '' ? $datos['fecha_aprobacion'] : now()->format('Y-m-d'),
             'comunidad_id' => $datos['comunidad_id'],
             'equipo_ref' => $datos['equipo_seccion_clave'],
-            'estado_validacion' => 'pendiente',
+            'estado_validacion' => 'aprobado',
             'estado_logico' => true,
         ];
 
@@ -407,10 +399,6 @@ class ProyectoGestionService
             'resumen' => 'required|min:10',
             'fecha_subida' => 'required|date',
             'asignacion_ct' => 'boolean',
-            'linea_investigacion_id' => ['nullable', Rule::exists(LineaInvestigacion::class, (new LineaInvestigacion())->getKeyName())],
-            'metodologia_id' => ['nullable', Rule::exists(MetodologiaInvestigacion::class, (new MetodologiaInvestigacion())->getKeyName())],
-            'tipo_publicacion_id' => ['nullable', Rule::exists(TipoPublicacion::class, (new TipoPublicacion())->getKeyName())],
-            'tipo_investigacion_id' => ['nullable', Rule::exists(TipoInvestigacion::class, (new TipoInvestigacion())->getKeyName())],
             'comunidad_id' => ['required', Rule::exists(Comunidad::class, (new Comunidad())->getKeyName())],
             'equipo_seccion_clave' => [
                 'required',
@@ -613,81 +601,12 @@ class ProyectoGestionService
 
     public function usuarioPuedeValidar(?User $user): bool
     {
-        $key = 'validar_' . ($user?->getKey() ?? 'null');
-        if (array_key_exists($key, static::$roleCache)) {
-            return static::$roleCache[$key];
-        }
-
-        if ($user === null) {
-            return static::$roleCache[$key] = false;
-        }
-
-        $userRoleService = app(UserRoleService::class);
-        $activeRole = $userRoleService->getActiveRole($user);
-
-        if ($activeRole !== null) {
-            if ($userRoleService->roleMatches('administrador', $activeRole)) {
-                return static::$roleCache[$key] = true;
-            }
-            if ($userRoleService->roleMatches('coordinador', $activeRole)) {
-                return static::$roleCache[$key] = true;
-            }
-            if ($userRoleService->roleMatches('profesor proyecto', $activeRole)) {
-                if ($userRoleService->allowsFreeSessionRoles()) {
-                    return static::$roleCache[$key] = true;
-                }
-                return static::$roleCache[$key] = $this->profesorIntranet->esProfesorProyectoVigente(trim((string) $user->usu_cedula));
-            }
-            return static::$roleCache[$key] = false;
-        }
-
-        $availableDetectedRoles = array_keys($userRoleService->detectAvailableRoles($user));
-
-        if (in_array('administrador', $availableDetectedRoles, true)) {
-            return static::$roleCache[$key] = true;
-        }
-
-        if (in_array('coordinador', $availableDetectedRoles, true)) {
-            return static::$roleCache[$key] = true;
-        }
-
-        if (in_array('profesor proyecto', $availableDetectedRoles, true)) {
-            return static::$roleCache[$key] = $this->profesorIntranet->esProfesorProyectoVigente(trim((string) $user->usu_cedula));
-        }
-
-        return static::$roleCache[$key] = false;
+        return false;
     }
 
     public function usuarioPuedeValidarProyecto(?User $user, Proyecto $proyecto): bool
     {
-        if ($user === null || ! $this->usuarioPuedeValidar($user)) {
-            return false;
-        }
-
-        if ($this->usuarioEsAdminEnSistema($user)) {
-            return true;
-        }
-
-        $disponibles = array_keys(app(UserRoleService::class)->detectAvailableRoles($user));
-
-        if (in_array('coordinador', $disponibles, true) && $user->hasRole('coordinador')) {
-            return true;
-        }
-
-        if (! $user->hasRole('profesor proyecto')) {
-            return false;
-        }
-
-        $partes = $this->equipoSeccion->parsearClave($proyecto->equipo_ref);
-        if ($partes === null) {
-            return false;
-        }
-
-        return $this->profesorIntranet->esProfesorProyectoEnLapso(
-            trim((string) $user->usu_cedula),
-            $partes['lap_codigo'],
-            ['seccion' => $partes['sec_codigo']]
-        );
+        return false;
     }
 
     protected function autorizarValidacionProyecto(?User $user, Proyecto $proyecto): void
