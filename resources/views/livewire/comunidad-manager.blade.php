@@ -108,7 +108,7 @@
                             <td align="center">{{ $loop->iteration }}</td>
                             <td>
                                 <span style="font-weight: bold;">{{ $c->nombre }}</span>
-                                <br><span style="font-size: 9px; color: #555;">{{ $c->direccion?->municipio?->estado?->est_nombre ?? '' }} / {{ $c->direccion?->municipio?->mun_nombre ?? '' }} - {{ $c->direccion?->dir_calle ?? '' }}</span>
+                                <br><span style="font-size: 9px; color: #555;">{{ $c->dir?->municipio?->estado?->est_nombre ?? '' }} / {{ $c->dir?->municipio?->mun_nombre ?? '' }} - {{ $c->dir?->dir_calle ?? '' }}</span>
                             </td>
                             <td align="center">{{ $c->rif }}</td>
                             <td align="center">{{ $c->correo }}<br><b>{{ $c->numero_telefono }}</b></td>
@@ -351,7 +351,7 @@
 
                                 <div>
                                     <label style="display: block; font-weight: bold; margin-bottom: 4px; color: #000;">Correo Electrónico:</label>
-                                    <input wire:model.live="contactos.{{ $i }}.correo" type="email" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px; box-sizing: border-box;">
+                                    <input wire:model.live="contactos.{{ $i }}.correo" type="email" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px; box-sizing: border-box;" onkeyup="verificarCorreo({{ $i }})" id="email-{{ $i }}">
                                     <div style="font-size:10px; color:#888; margin-top:2px;">(opcional)</div>
                                     @error('contactos.' . $i . '.correo')
                                         <span style="color:red; font-size:10px; display: block; margin-top: 3px;">{{ $message }}</span>
@@ -360,21 +360,11 @@
 
                                 <div>
                                     <label style="display: block; font-weight: bold; margin-bottom: 4px; color: #000;">Confirmar Correo Electrónico:</label>
-                                    <input wire:model.live="contactos.{{ $i }}.correo_confirmacion" type="email" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px; box-sizing: border-box;">
+                                    <input wire:model.live="contactos.{{ $i }}.correo_confirmacion" type="email" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px; box-sizing: border-box;" onkeyup="verificarCorreo({{ $i }})" id="email-conf-{{ $i }}">
                                     @error('contactos.' . $i . '.correo_confirmacion')
                                         <span style="color:red; font-size:10px; display: block; margin-top: 3px;">{{ $message }}</span>
                                     @enderror
-                                    @php
-                                        $ce = trim($contactos[$i]['correo'] ?? '');
-                                        $cf = trim($contactos[$i]['correo_confirmacion'] ?? '');
-                                    @endphp
-                                    @if ($ce !== '' && $cf !== '')
-                                        @if ($ce === $cf)
-                                            <span style="color:green; font-size:10px; display: block; margin-top: 2px;">✓ Coinciden</span>
-                                        @else
-                                            <span style="color:red; font-size:10px; display: block; margin-top: 2px;">✗ No coinciden</span>
-                                        @endif
-                                    @endif
+                                    <span id="email-match-{{ $i }}" style="font-size:10px; display: block; margin-top: 2px;"></span>
                                 </div>
 
                                 <div>
@@ -396,11 +386,6 @@
                                     @enderror
                                 </div>
                             </div>
-                            <div style="padding: 8px 15px 12px; text-align: right; border-top: 1px solid #eee;">
-                                <button type="button" wire:click="guardarContactosAhora" class="cm-btn cm-btn-primary cm-btn-sm" style="background: #5a7d8a; border-color: #4a6a77; padding: 4px 14px; font-size: 11px;">
-                                    Guardar
-                                </button>
-                            </div>
                         </div>
                     @endforeach
                 @endif
@@ -413,4 +398,27 @@
             </div>
         </fieldset>
     @endif
+
+    <script>
+        function verificarCorreo(i) {
+            const el1 = document.getElementById('email-' + i);
+            const el2 = document.getElementById('email-conf-' + i);
+            const span = document.getElementById('email-match-' + i);
+            if (!el1 || !el2 || !span) return;
+            const v1 = el1.value.trim();
+            const v2 = el2.value.trim();
+            if (v1 === '' || v2 === '') {
+                span.innerHTML = '';
+                span.style.color = '';
+                return;
+            }
+            if (v1 === v2) {
+                span.innerHTML = '✓ Coinciden';
+                span.style.color = 'green';
+            } else {
+                span.innerHTML = '✗ No coinciden';
+                span.style.color = 'red';
+            }
+        }
+    </script>
 </div>

@@ -26,6 +26,12 @@ class GrupoProyectoManager extends Component
 
     public string $filterEquipo = '';
 
+    public string $formLapso = '';
+
+    public string $formPrograma = '';
+
+    public string $formSeccion = '';
+
     public Collection $lapsos;
 
     public Collection $programas;
@@ -52,6 +58,20 @@ class GrupoProyectoManager extends Component
     public function updatingFilterSeccion(): void
     {
         $this->resetPage();
+    }
+
+    public function updatedFormLapso(): void
+    {
+        $this->formPrograma = '';
+        $this->formSeccion = '';
+        $this->loadProgramas();
+        $this->loadSecciones();
+    }
+
+    public function updatedFormPrograma(): void
+    {
+        $this->formSeccion = '';
+        $this->loadSecciones();
     }
 
     public ?int $editingGrpCodigo = null;
@@ -92,11 +112,12 @@ class GrupoProyectoManager extends Component
             return;
         }
 
+        $this->viewMode = 'form';
         $this->editingGrpCodigo = $grpCodigo;
         $this->nombreGrupo = $g->nombre;
-        $this->filterLapso = (string) $g->lap_codigo;
-        $this->filterPrograma = $g->pro_codigo ? (string) $g->pro_codigo : '';
-        $this->filterSeccion = (string) $g->sec_codigo;
+        $this->formLapso = (string) $g->lap_codigo;
+        $this->formPrograma = $g->pro_codigo ? (string) $g->pro_codigo : '';
+        $this->formSeccion = (string) $g->sec_codigo;
         $this->comunidadId = $g->com_codigo ? (string) $g->com_codigo : '';
         $this->miembrosSeleccionados = array_map(
             fn($m) => [
@@ -112,7 +133,8 @@ class GrupoProyectoManager extends Component
             ],
             $g->miembros,
         );
-        $this->viewMode = 'form';
+        $this->loadProgramas();
+        $this->loadSecciones();
     }
 
     public function agregarIntegrante(): void
@@ -168,13 +190,13 @@ class GrupoProyectoManager extends Component
         $this->validate(
             [
                 'nombreGrupo' => 'required|min:2|max:120',
-                'filterLapso' => 'required',
-                'filterSeccion' => 'required',
+                'formLapso' => 'required',
+                'formSeccion' => 'required',
             ],
             [
                 'nombreGrupo.required' => 'Indique un nombre para el equipo/grupo.',
-                'filterLapso.required' => 'Seleccione el lapso.',
-                'filterSeccion.required' => 'Seleccione la sección del PNF.',
+                'formLapso.required' => 'Seleccione el lapso.',
+                'formSeccion.required' => 'Seleccione la sección del PNF.',
             ],
         );
 
@@ -186,9 +208,9 @@ class GrupoProyectoManager extends Component
         $user = auth()->user();
         $clave = $grupos->registrar(
             $this->nombreGrupo,
-            (int) $this->filterLapso,
-            (int) $this->filterSeccion,
-            $this->filterPrograma !== '' ? (int) $this->filterPrograma : null,
+            (int) $this->formLapso,
+            (int) $this->formSeccion,
+            $this->formPrograma !== '' ? (int) $this->formPrograma : null,
             $this->comunidadId !== '' ? (int) $this->comunidadId : null,
             $this->miembrosSeleccionados,
             trim((string) $user->usu_cedula),
@@ -225,42 +247,51 @@ class GrupoProyectoManager extends Component
         $this->comunidadId = '';
         $this->miembrosSeleccionados = [];
         $this->selectedCedula = '';
+        $this->formLapso = '';
+        $this->formPrograma = '';
+        $this->formSeccion = '';
     }
 
     public function updatedFilterLapso(): void
     {
-        $this->filterPrograma = '';
-        $this->filterSeccion = '';
         $this->loadProgramas();
         $this->loadSecciones();
     }
 
     public function updatedFilterPrograma(): void
     {
-        $this->filterSeccion = '';
         $this->loadSecciones();
     }
 
     protected function loadProgramas(): void
     {
-        $lapCodigo = $this->filterLapso !== '' ? (int) $this->filterLapso : null;
+        if ($this->viewMode === 'form') {
+            $lapCodigo = $this->formLapso !== '' ? (int) $this->formLapso : null;
+        } else {
+            $lapCodigo = $this->filterLapso !== '' ? (int) $this->filterLapso : null;
+        }
         $this->programas = app(IntranetEquipoSeccionService::class)->programasEnLapso($lapCodigo);
     }
 
     protected function loadSecciones(): void
     {
-        $lapCodigo = $this->filterLapso !== '' ? (int) $this->filterLapso : null;
-        $programaCodigo = $this->filterPrograma !== '' ? (int) $this->filterPrograma : null;
+        if ($this->viewMode === 'form') {
+            $lapCodigo = $this->formLapso !== '' ? (int) $this->formLapso : null;
+            $programaCodigo = $this->formPrograma !== '' ? (int) $this->formPrograma : null;
+        } else {
+            $lapCodigo = $this->filterLapso !== '' ? (int) $this->filterLapso : null;
+            $programaCodigo = $this->filterPrograma !== '' ? (int) $this->filterPrograma : null;
+        }
         $this->secciones = app(IntranetEquipoSeccionService::class)->seccionesEnLapso($lapCodigo, $programaCodigo);
     }
 
     protected function candidatosActuales()
     {
-        if ($this->filterLapso === '' || $this->filterSeccion === '') {
+        if ($this->formLapso === '' || $this->formSeccion === '') {
             return collect();
         }
 
-        return app(GrupoProyectoService::class)->candidatosSeccion((int) $this->filterLapso, (int) $this->filterSeccion);
+        return app(GrupoProyectoService::class)->candidatosSeccion((int) $this->formLapso, (int) $this->formSeccion);
     }
 
     /**
@@ -268,28 +299,28 @@ class GrupoProyectoManager extends Component
      */
     protected function etiquetasContextoFormulario(IntranetEquipoSeccionService $equipos): array
     {
-        if ($this->filterLapso === '' || $this->filterSeccion === '') {
+        if ($this->formLapso === '' || $this->formSeccion === '') {
             return ['lap_nombre' => '', 'sec_nombre' => '', 'pro_siglas' => '', 'pro_nombre' => ''];
         }
 
-        return $equipos->etiquetasContexto((int) $this->filterLapso, (int) $this->filterSeccion, $this->filterPrograma !== '' ? (int) $this->filterPrograma : null);
+        return $equipos->etiquetasContexto((int) $this->formLapso, (int) $this->formSeccion, $this->formPrograma !== '' ? (int) $this->formPrograma : null);
     }
 
     public function with()
     {
         $grupos = app(GrupoProyectoService::class);
-        $lapCodigo = $this->filterLapso !== '' ? (int) $this->filterLapso : null;
-        $programaCodigo = $this->filterPrograma !== '' ? (int) $this->filterPrograma : null;
-        $seccionCodigo = $this->filterSeccion !== '' ? (int) $this->filterSeccion : null;
+
+        $this->loadProgramas();
+        $this->loadSecciones();
 
         $tablaOk = $grupos->tablaDisponible();
         $lista = collect();
-        if ($tablaOk) {
+        if ($tablaOk && $this->viewMode === 'list') {
             try {
                 $lista = $grupos->listar([
-                    'lapso' => $lapCodigo,
-                    'programa' => $programaCodigo,
-                    'seccion' => $seccionCodigo,
+                    'lapso' => $this->filterLapso !== '' ? (int) $this->filterLapso : null,
+                    'programa' => $this->filterPrograma !== '' ? (int) $this->filterPrograma : null,
+                    'seccion' => $this->filterSeccion !== '' ? (int) $this->filterSeccion : null,
                     'busqueda' => $this->search,
                 ]);
             } catch (\Throwable $e) {

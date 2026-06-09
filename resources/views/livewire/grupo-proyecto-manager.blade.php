@@ -148,13 +148,13 @@
                     <option value="{{ $l->lap_codigo }}">{{ $l->lap_nombre }}</option>
                 @endforeach
             </select>
-            <select wire:model.live="filterPrograma" class="grp-filter-select" @if (!$filterLapso) disabled @endif>
+            <select wire:model.live="filterPrograma" class="grp-filter-select">
                 <option value="">PNF / Programa</option>
                 @foreach ($programas as $p)
                     <option value="{{ $p->pro_codigo }}">{{ $p->pro_siglas }}</option>
                 @endforeach
             </select>
-            <select wire:model.live="filterSeccion" class="grp-filter-select" @if (!$filterLapso) disabled @endif>
+            <select wire:model.live="filterSeccion" class="grp-filter-select">
                 <option value="">Secci&oacute;n</option>
                 @foreach ($secciones as $s)
                     <option value="{{ $s->sec_codigo }}">{{ $s->sec_nombre }}</option>
@@ -227,32 +227,32 @@
                     <td colspan="2" style="padding-top:8px;">
                         <b>Contexto acad&eacute;mico:</b>
                         <div style="display: flex; gap: 16px; margin-top: 4px;">
-                            <select wire:model.live="filterLapso" class="grp-filter-select">
+                            <select wire:model.live="formLapso" class="grp-filter-select">
                                 <option value="">Lapso</option>
                                 @foreach ($lapsos as $l)
                                     <option value="{{ $l->lap_codigo }}">{{ $l->lap_nombre }}</option>
                                 @endforeach
                             </select>
-                            <select wire:model.live="filterPrograma" class="grp-filter-select"
-                                @if (!$filterLapso) disabled @endif>
+                            <select wire:model.live="formPrograma" class="grp-filter-select"
+                                @if (!$formLapso) disabled @endif>
                                 <option value="">PNF</option>
                                 @foreach ($programas as $p)
                                     <option value="{{ $p->pro_codigo }}">{{ $p->pro_siglas }}</option>
                                 @endforeach
                             </select>
-                            <select wire:model.live="filterSeccion" class="grp-filter-select"
-                                @if (!$filterLapso) disabled @endif>
+                            <select wire:model.live="formSeccion" class="grp-filter-select"
+                                @if (!$formLapso) disabled @endif>
                                 <option value="">Secci&oacute;n</option>
                                 @foreach ($secciones as $s)
                                     <option value="{{ $s->sec_codigo }}">{{ $s->sec_nombre }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        @if($filterLapso && $filterSeccion)
+                        @if($formLapso && $formSeccion)
                             @php
-                                $lapLabel = $lapsos->firstWhere('lap_codigo', (int)$filterLapso)?->lap_nombre ?? 'Lapso #'.$filterLapso;
-                                $proLabel = $programas->firstWhere('pro_codigo', (int)$filterPrograma)?->pro_siglas ?? '—';
-                                $secLabel = $secciones->firstWhere('sec_codigo', (int)$filterSeccion)?->sec_nombre ?? 'Secci&oacute;n #'.$filterSeccion;
+                                $lapLabel = $lapsos->firstWhere('lap_codigo', (int)$formLapso)?->lap_nombre ?? 'Lapso #'.$formLapso;
+                                $proLabel = $programas->firstWhere('pro_codigo', (int)$formPrograma)?->pro_siglas ?? '—';
+                                $secLabel = $secciones->firstWhere('sec_codigo', (int)$formSeccion)?->sec_nombre ?? 'Secci&oacute;n #'.$formSeccion;
                             @endphp
                             <div style="margin-top:6px; background:#f0f7f0; border:1px solid #b8d4b8; border-radius:4px; padding:6px 10px; font-size:12px;">
                                 <b>Secci&oacute;n seleccionada:</b>
@@ -268,7 +268,7 @@
                 </tr>
             </table>
 
-            @if ($filterSeccion !== '')
+            @if ($formSeccion !== '')
                 <div style="margin-top: 12px; padding: 8px; background: #f5f5f5; border: 1px solid #ccc;">
                     <b>Agregar integrante (de la secci&oacute;n):</b><br>
                     <div style="display: flex; gap: 16px; align-items: center; margin-top: 4px;">

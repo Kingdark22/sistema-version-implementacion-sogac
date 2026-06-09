@@ -2,7 +2,6 @@
 
 namespace App\Livewire;
 
-use App\Models\Comunidad;
 use App\Services\ComunidadGestionService;
 use App\Services\IntranetProfessorService;
 use Livewire\Component;
@@ -211,55 +210,6 @@ class ComunidadManager extends Component
         }
 
         $this->viewMode = 'form';
-        $this->dispatch('refresh-icons');
-    }
-
-    public function guardarContactosAhora(ComunidadGestionService $gestion): void
-    {
-        if (! $this->puedeGestionar()) {
-            session()->flash('message_error', 'No tiene permiso para guardar.');
-            return;
-        }
-
-        $this->validate([
-            'nombre' => 'required|string|max:255',
-            'estado_id' => 'required|integer|exists:estados,est_codigo',
-            'municipio_id' => 'required|integer|exists:municipios,mun_codigo',
-            'dir_nombre' => 'required|string|max:500',
-            'contactos' => 'nullable|array',
-            'contactos.*.nombre' => 'required|string|max:255',
-            'contactos.*.apellido' => 'nullable|string|max:255',
-            'contactos.*.correo' => 'nullable|email|max:150',
-            'contactos.*.correo_confirmacion' => 'nullable|email|max:150',
-            'contactos.*.prefijo' => 'nullable|in:0424,0414,0412,0422,0416,0426',
-            'contactos.*.telefono' => 'nullable|string|max:50',
-            'contactos.*.cargo' => 'nullable|string|max:100',
-        ]);
-
-        foreach ($this->contactos as $i => $contacto) {
-            $this->validarContactoCorreoRealtime($i);
-        }
-        if ($this->getErrorBag()->isNotEmpty()) {
-            return;
-        }
-
-        $gestion->guardar($this->editingId, [
-            'nombre' => $this->nombre,
-            'rif' => $this->rif,
-            'correo' => $this->correo,
-            'prefijo_telefono' => $this->prefijo_telefono,
-            'numero_telefono' => $this->numero_telefono,
-            'estado_id' => $this->estado_id,
-            'municipio_id' => $this->municipio_id,
-            'dir_nombre' => $this->dir_nombre,
-            'contactos' => $this->normalizarContactos(),
-        ]);
-
-        if ($this->editingId === null) {
-            $this->editingId = Comunidad::where('nombre', $this->nombre)->latest()->value('com_codigo');
-        }
-
-        session()->flash('message', 'Contactos guardados correctamente.');
         $this->dispatch('refresh-icons');
     }
 

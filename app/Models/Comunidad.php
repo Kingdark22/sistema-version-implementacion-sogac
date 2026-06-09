@@ -27,7 +27,7 @@ class Comunidad extends RepositorioModel
         return $this->hasMany(ComunidadContacto::class, 'com_codigo', 'com_codigo');
     }
 
-    public function direccion()
+    public function dir()
     {
         return $this->belongsTo(Direccion::class, 'dir_codigo');
     }

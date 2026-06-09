@@ -40,9 +40,9 @@ class ComunidadGestionService
      */
     public function cargarParaEdicion(int $id): array
     {
-        $comunidad = Comunidad::with('contactos', 'direccion.municipio.estado')->whereKey($id)->firstOrFail();
+        $comunidad = Comunidad::with('contactos', 'dir.municipio.estado')->whereKey($id)->firstOrFail();
 
-        $direccion = $comunidad->direccion;
+        $direccion = $comunidad->dir;
 
         return [
             'nombre' => $comunidad->nombre,
@@ -103,7 +103,7 @@ class ComunidadGestionService
                 $numero = $contacto['telefono'] ?? '';
                 $telefono = $numero !== '' ? ($prefijo !== '' ? $prefijo . $numero : $numero) : '';
                 $rows[] = [
-                    'ccom_codigo' => $comunidad->getKey(),
+                    'com_codigo' => $comunidad->getKey(),
                     'ccon_nombre' => $contacto['nombre'],
                     'ccon_apellido' => $contacto['apellido'] ?? null,
                     'ccon_correo' => $contacto['correo'] ?? null,
@@ -139,7 +139,7 @@ class ComunidadGestionService
     {
         $termino = trim($filtros['search'] ?? '');
 
-        $comunidades = Comunidad::with('contactos', 'direccion.municipio.estado')
+        $comunidades = Comunidad::with('contactos', 'dir.municipio.estado')
             ->when($termino !== '', function ($q) use ($termino) {
                 $q->where('nombre', 'like', '%' . $termino . '%')
                     ->orWhere('rif', 'like', '%' . $termino . '%');
