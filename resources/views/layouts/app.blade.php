@@ -125,7 +125,6 @@
             width: 170px;
             border-radius: 2px;
         }
-        input[type="text"], textarea { text-transform: uppercase; }
         textarea { height: auto; }
         
         input:focus, textarea:focus { background: #fff; border:1px solid #F00; box-shadow: 0 0 3px #aaa; outline: none; }

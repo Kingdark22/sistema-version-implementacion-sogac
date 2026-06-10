@@ -91,7 +91,7 @@ Route::middleware(['auth', 'active.role'])->group(function () {
         Route::view('/configuracion/componentes', 'componentes.index')->name('componentes.index');
     });
 
-    Route::view('/notificaciones', 'notificaciones.index')->name('notificaciones.index')->middleware('role:administrador,coordinador');
+
 });
 
 Route::get('/documentos/{path}', function (string $path) {

@@ -542,7 +542,63 @@
                     @endif
                 </div>
 
-                {{-- SECCIÓN CLASIFICACIÓN (oculta temporalmente) --}}
+                {{-- == SECCIÓN CLASIFICACIÓN (visible) == --}}
+                <div style="margin-bottom: 15px; border: 1px solid #CCC; border-radius: 4px; padding: 10px;">
+                    <table width="100%" cellpadding="4" cellspacing="0" style="font-size: 12px;">
+                        <tr>
+                            <td width="20%"><b>L&iacute;nea de Investigaci&oacute;n:</b></td>
+                            <td width="30%">
+                                <select wire:model="linea_investigacion_id" style="width: 95%;">
+                                    <option value="">Seleccione...</option>
+                                    @foreach ($lineas ?? [] as $l)
+                                        <option value="{{ $l->id }}">{{ $l->nombre_investigacion }}</option>
+                                    @endforeach
+                                </select>
+                                @error('linea_investigacion_id')
+                                    <br><span class="obligatorio">{{ $message }}</span>
+                                @enderror
+                            </td>
+                            <td width="20%"><b>Metodolog&iacute;a:</b></td>
+                            <td width="30%">
+                                <select wire:model="metodologia_id" style="width: 95%;">
+                                    <option value="">Seleccione...</option>
+                                    @foreach ($metodologias ?? [] as $m)
+                                        <option value="{{ $m->id }}">{{ $m->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('metodologia_id')
+                                    <br><span class="obligatorio">{{ $message }}</span>
+                                @enderror
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><b>Tipo de Publicaci&oacute;n:</b></td>
+                            <td>
+                                <select wire:model="tipo_publicacion_id" style="width: 95%;">
+                                    <option value="">Seleccione...</option>
+                                    @foreach ($tipos_publicacion ?? [] as $tp)
+                                        <option value="{{ $tp->id }}">{{ $tp->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('tipo_publicacion_id')
+                                    <br><span class="obligatorio">{{ $message }}</span>
+                                @enderror
+                            </td>
+                            <td><b>Tipo de Investigaci&oacute;n:</b></td>
+                            <td>
+                                <select wire:model="tipo_investigacion_id" style="width: 95%;">
+                                    <option value="">Seleccione...</option>
+                                    @foreach ($tipos_investigacion ?? [] as $ti)
+                                        <option value="{{ $ti->id }}">{{ $ti->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('tipo_investigacion_id')
+                                    <br><span class="obligatorio">{{ $message }}</span>
+                                @enderror
+                            </td>
+                        </tr>
+                    </table>
+                </div>
 
                 {{-- == SECCIÓN AVANZADO (colapsable, oculta por defecto) == --}}
                 <div style="margin-bottom: 15px; border: 1px solid #CCC; border-radius: 4px;">

@@ -64,8 +64,6 @@ class ProyectoManager extends Component
 
     public bool $showTeamFilters = false;
 
-    public bool $showClassification = false;
-
     public bool $showAdvanced = false;
 
     public ?string $programa_id_derived = null;
@@ -156,11 +154,6 @@ class ProyectoManager extends Component
     public function toggleTeamFilters(): void
     {
         $this->showTeamFilters = ! $this->showTeamFilters;
-    }
-
-    public function toggleClassification(): void
-    {
-        $this->showClassification = ! $this->showClassification;
     }
 
     public function toggleAdvanced(): void
@@ -515,7 +508,6 @@ class ProyectoManager extends Component
         $this->esGrupoRegistrado = false;
         $this->comunidadNombreGrupo = null;
         $this->showTeamFilters = false;
-        $this->showClassification = false;
         $this->showAdvanced = false;
         $this->programa_id_derived = null;
         $this->trayecto_derived = '';

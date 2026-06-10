@@ -84,8 +84,6 @@ $nav = app(\App\Support\NavigationMenu::class)->flags(auth()->user());
                     <a href="{{ route('profesores-proyecto.index') }}"
                         class="{{ request()->routeIs('profesores-proyecto.index') ? 'active-sub' : '' }}">Profesores
                         de proyecto</a>
-                    <a href="{{ route('notificaciones.index') }}"
-                        class="{{ request()->routeIs('notificaciones.index') ? 'active-sub' : '' }}">Notificaciones</a>
                 </div>
             </li>
             @endif
