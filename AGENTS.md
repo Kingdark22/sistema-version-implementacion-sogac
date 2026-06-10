@@ -83,6 +83,11 @@
 - **UI**: Label changed from "Mensaje:" to "Comentarios:" with placeholder "Comentarios opcionales...".
 - **Email body**: user's comments shown under "Comentarios:" heading only when non-empty; no auto-fetched DB comments.
 
+### 18. Gestionar Organizaciones CRUD removed
+- **Files deleted**: `app/Livewire/OrganizacionManager.php`, `resources/views/livewire/organizacion-manager.blade.php`, `resources/views/organizaciones/` (entire directory)
+- **Files modified**: `routes/web.php` — removed `/organizaciones` route; `resources/views/components/sidebar.blade.php` — removed "Vinculación" menu; `app/Support/NavigationMenu.php` — removed `canManageOrganizaciones` flag; `config/repositorio_schema.php` — removed `organizacion` schema mapping
+- **Models kept**: `Organizacion`, `OrgContacto` — still used by publicaciones email panel (reading org/contact data for sending project PDFs)
+
 ## Key Patterns
 - `MapsLegacyColumns` trait only works on Model instances (after `get()`). The `LegacyColumnBuilder` only overrides `where()` and `orderBy()` — all other QB methods (`whereIn`, `whereNotNull`, `whereNull`, `pluck`, `select`, `groupBy`, `update`, `delete`, etc.) bypass the mapping.
 - **Fix rule**: For `whereIn()`, `whereNotNull()`, `whereNull()` — use the **physical column name** directly.

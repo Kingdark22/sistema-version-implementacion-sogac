@@ -28,7 +28,6 @@ class Proyecto extends RepositorioModel
     ];
 
     protected static array $resumenEquipoCache = [];
-    protected static array $grupoNombreCache = [];
 
     public function getTituloAttribute(): string
     {
@@ -38,11 +37,11 @@ class Proyecto extends RepositorioModel
         $partes = app(\App\Services\GrupoProyectoService::class)->parsearClave($this->equipo_ref);
         if ($partes && ($partes['tipo'] ?? '') === \App\Services\GrupoProyectoService::PREFIJO && !empty($partes['grp_codigo'])) {
             $codigo = $partes['grp_codigo'];
-            if (!isset(self::$grupoNombreCache[$codigo])) {
-                $grupo = \App\Models\GrupoProyectoModulo::find($codigo);
-                self::$grupoNombreCache[$codigo] = $grupo ? $grupo->grp_nombre : null;
+            if ($this->relationLoaded('grupoProyecto') && $this->grupoProyecto) {
+                return $this->grupoProyecto->grp_nombre;
             }
-            return self::$grupoNombreCache[$codigo] ?? $this->equipo_ref;
+            $grupo = \App\Models\GrupoProyectoModulo::find($codigo);
+            return $grupo ? $grupo->grp_nombre : $this->equipo_ref;
         }
         return $this->equipo_ref;
     }
@@ -92,9 +91,10 @@ class Proyecto extends RepositorioModel
             $query->where(function ($q) use ($search) {
                 $q->where('equipo_ref', 'like', "%{$search}%");
                 try {
-                    $q->orWhereRaw('MATCH(pry_resumen) AGAINST(? IN BOOLEAN MODE)', [$search . '*']);
+                    $q->orWhereRaw('MATCH(pry_titulo, pry_resumen) AGAINST(? IN BOOLEAN MODE)', [$search . '*']);
                 } catch (\Throwable) {
-                    $q->orWhere('resumen', 'like', "%{$search}%");
+                    $q->orWhere('pry_titulo', 'like', "%{$search}%");
+                    $q->orWhere('pry_resumen', 'like', "%{$search}%");
                 }
             });
         }
@@ -136,6 +136,31 @@ class Proyecto extends RepositorioModel
         return $this->belongsTo(Comunidad::class, 'com_codigo', 'com_codigo');
     }
 
+    public static function precargarTitulos($proyectos): void
+    {
+        $codigos = [];
+        $service = app(\App\Services\GrupoProyectoService::class);
+        foreach ($proyectos as $p) {
+            $partes = $service->parsearClave($p->equipo_ref);
+            if ($partes && ($partes['tipo'] ?? '') === \App\Services\GrupoProyectoService::PREFIJO && !empty($partes['grp_codigo'])) {
+                $codigos[$partes['grp_codigo']] = true;
+            }
+        }
+        if (!$codigos) {
+            return;
+        }
+        $grupos = \App\Models\GrupoProyectoModulo::whereIn('grp_codigo', array_keys($codigos))->get()->keyBy('grp_codigo');
+        foreach ($proyectos as $p) {
+            $partes = $service->parsearClave($p->equipo_ref);
+            if ($partes && !empty($partes['grp_codigo'])) {
+                $codigo = $partes['grp_codigo'];
+                if (isset($grupos[$codigo])) {
+                    $p->setRelation('grupoProyecto', $grupos[$codigo]);
+                }
+            }
+        }
+    }
+
     /**
      * Aprueba el proyecto.
      */
@@ -169,9 +194,10 @@ class Proyecto extends RepositorioModel
 
         if ($search) {
             try {
-                $query->whereRaw('MATCH(pry_resumen) AGAINST(? IN BOOLEAN MODE)', [$search . '*']);
+                $query->whereRaw('MATCH(pry_titulo, pry_resumen) AGAINST(? IN BOOLEAN MODE)', [$search . '*']);
             } catch (\Throwable) {
-                $query->where('resumen', 'like', '%' . $search . '%');
+                $query->where('pry_titulo', 'like', '%' . $search . '%')
+                    ->orWhere('pry_resumen', 'like', '%' . $search . '%');
             }
         }
 

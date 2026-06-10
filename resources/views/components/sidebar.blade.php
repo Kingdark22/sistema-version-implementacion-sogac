@@ -84,20 +84,22 @@ $nav = app(\App\Support\NavigationMenu::class)->flags(auth()->user());
                     <a href="{{ route('profesores-proyecto.index') }}"
                         class="{{ request()->routeIs('profesores-proyecto.index') ? 'active-sub' : '' }}">Profesores
                         de proyecto</a>
+                    <a href="{{ route('notificaciones.index') }}"
+                        class="{{ request()->routeIs('notificaciones.index') ? 'active-sub' : '' }}">Notificaciones</a>
                 </div>
             </li>
             @endif
-
-            @if ($nav['canManageOrganizaciones'])
+            
+            @if ($nav['canManageOrganizaciones'] ?? false)
             <li>
                 <div class="legacy-menu-item has-submenu">
                     Vinculación
                     <div class="arrow-icon"></div>
                 </div>
                 <div class="legacy-submenu">
-                    <a href="{{ route('organizaciones.index') }}"
-                        class="{{ request()->routeIs('organizaciones.index') ? 'active-sub' : '' }}">
-                        Gestionar Organizaciones
+                    <a href="{{ route('vinculacion.index') }}"
+                        class="{{ request()->routeIs('vinculacion.index') ? 'active-sub' : '' }}">
+                        Vincular Proyectos
                     </a>
                 </div>
             </li>

@@ -187,6 +187,8 @@
 
         <!-- Main Content (Centro) -->
         <main id="centro">
+            @livewire('notificaciones-banner')
+
             @hasSection('header')
             <div style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;">
                 <h2 style="font-size: 20px; font-weight: bold; color: #333; margin: 0; text-align: left;">@yield('header')</h2>

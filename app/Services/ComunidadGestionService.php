@@ -69,7 +69,7 @@ class ComunidadGestionService
     /**
      * Guarda o actualiza una comunidad.
      */
-    public function guardar(?int $id, array $datos): void
+    public function guardar(?int $id, array $datos): int
     {
         $dirNombre = trim($datos['dir_nombre'] ?? '');
 
@@ -117,6 +117,8 @@ class ComunidadGestionService
                 $comunidad->contactos()->insert($rows);
             }
         }
+
+        return $comunidad->getKey();
     }
 
     /**

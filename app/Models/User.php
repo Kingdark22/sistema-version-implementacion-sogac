@@ -9,6 +9,7 @@ use App\Support\UserEquiposQuery;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
 
 class User extends Authenticatable
 {
@@ -102,7 +103,7 @@ class User extends Authenticatable
             return 'Rol activo: ' . $activeLabel;
         }
 
-        return once(function () {
+        return Cache::remember('user_modalidad_' . $this->usu_cedula, 300, function () {
             $cedulaTrimmed = trim((string) $this->usu_cedula);
 
             try {

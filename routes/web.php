@@ -57,10 +57,6 @@ Route::middleware(['auth', 'active.role'])->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
     Route::view('/configuracion', 'configuracion.index')->name('configuracion');
 
-    Route::middleware('role:administrador,gestionador')->group(function () {
-        Route::view('/organizaciones', 'organizaciones.index')->name('organizaciones.index');
-    });
-
     Route::middleware('role:administrador,estudiante')->group(function () {
         Route::view('/lineas-investigacion', 'lineas.index')->name('lineas-investigacion');
         Route::view('/tipos-investigacion', 'tipo_investigacion.index')->name('tipos-investigacion');
@@ -80,6 +76,7 @@ Route::middleware(['auth', 'active.role'])->group(function () {
     });
 
     Route::view('/publicaciones', 'publicaciones.index')->name('publicaciones.index')->middleware('role:gestionador');
+    Route::view('/vinculacion', 'vinculacion.index')->name('vinculacion.index')->middleware('role:administrador,gestionador');
 
     Route::get('/proyectos/crear', function () {
         return redirect()->route('proyectos.gestion', request()->query());
@@ -93,6 +90,8 @@ Route::middleware(['auth', 'active.role'])->group(function () {
         Route::view('/configuracion/profesores-proyecto', 'profesores_proyecto.index')->name('profesores-proyecto.index');
         Route::view('/configuracion/componentes', 'componentes.index')->name('componentes.index');
     });
+
+    Route::view('/notificaciones', 'notificaciones.index')->name('notificaciones.index')->middleware('role:administrador,coordinador');
 });
 
 Route::get('/documentos/{path}', function (string $path) {

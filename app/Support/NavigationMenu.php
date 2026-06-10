@@ -42,10 +42,11 @@ class NavigationMenu
             return $cached;
         }
 
-        $isAdmin = $user->hasRole('administrador');
-        $isCoordinator = $user->hasRole('coordinador');
-        $isTeacher = $user->hasRole('profesor proyecto');
-        $isStudent = $user->hasRole('estudiante');
+        $availableRoles = array_keys($user->availableRoles());
+        $isAdmin = in_array('administrador', $availableRoles, true);
+        $isCoordinator = in_array('coordinador', $availableRoles, true);
+        $isTeacher = in_array('profesor proyecto', $availableRoles, true);
+        $isStudent = in_array('estudiante', $availableRoles, true);
         $studentWithTeam = $isStudent && $user->perteneceAEquipo();
 
         $flags = [

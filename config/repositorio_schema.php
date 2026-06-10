@@ -124,23 +124,7 @@ return [
         ],
     ],
 
-    // ---------------------------------------------------------------
-    // Módulo Organizaciones (Tablas del usuario)
-    // ---------------------------------------------------------------
-
-    'organizacion' => [
-        'primary_key' => 'org_codigo',
-        'columns' => [
-            'id'               => 'org_codigo',
-            'nombre'           => 'org_nombre',
-            'rif'              => 'org_rif',
-            'correo'           => 'org_correo',
-            'direccion'        => 'org_direccion',
-            'dep_codigo'       => 'org_dep_codigo',
-        ],
-    ],
-
-    'departamento' => [
+'departamento' => [
         'primary_key' => 'dep_codigo',
         'columns' => [
             'id'               => 'dep_codigo',

@@ -243,7 +243,7 @@ class ComunidadManager extends Component
             return;
         }
 
-        $gestion->guardar($this->editingId, [
+        $id = $gestion->guardar($this->editingId, [
             'nombre' => $this->nombre,
             'rif' => $this->rif,
             'correo' => $this->correo,
@@ -256,7 +256,7 @@ class ComunidadManager extends Component
         ]);
 
         if ($this->editingId === null) {
-            $this->editingId = Comunidad::where('nombre', $this->nombre)->latest()->value('com_codigo');
+            $this->editingId = $id;
         }
 
         session()->flash('message', 'Contactos guardados correctamente.');

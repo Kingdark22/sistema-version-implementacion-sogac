@@ -146,9 +146,23 @@ class ProyectosPublicadosManager extends Component
         }
     }
 
-    protected function buildEmailList(): array
+    protected function loadOrganizations()
     {
-        $orgs = $this->loadOrganizations();
+        $query = Organizacion::with('contactos');
+        if ($this->searchOrg !== '') {
+            $term = '%' . $this->searchOrg . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('nombre', 'like', $term)
+                    ->orWhere('correo', 'like', $term)
+                    ->orWhere('rif', 'like', $term);
+            });
+        }
+        return $query->orderBy('nombre')->get();
+    }
+
+    protected function buildEmailList($orgs = null): array
+    {
+        $orgs ??= $this->loadOrganizations();
         $list = [];
         foreach ($orgs as $org) {
             if ($org->correo) {
@@ -161,19 +175,6 @@ class ProyectosPublicadosManager extends Component
             }
         }
         return $list;
-    }
-
-    protected function loadOrganizations()
-    {
-        $query = Organizacion::with('contactos');
-        if ($this->searchOrg !== '') {
-            $query->where(function ($q) {
-                $q->where('nombre', 'like', '%' . $this->searchOrg . '%')
-                    ->orWhere('correo', 'like', '%' . $this->searchOrg . '%')
-                    ->orWhere('rif', 'like', '%' . $this->searchOrg . '%');
-            });
-        }
-        return $query->orderBy('nombre')->get();
     }
 
     public function sendProjects(): void
@@ -193,6 +194,8 @@ class ProyectosPublicadosManager extends Component
             ->where('estado_validacion', 'aprobado')
             ->with('comunidad')
             ->get();
+
+        Proyecto::precargarTitulos($proyectos);
 
         if ($proyectos->isEmpty()) {
             $this->tipoMensaje = 'error';
@@ -281,10 +284,15 @@ class ProyectosPublicadosManager extends Component
         }
 
         if ($this->search !== '') {
-            $term = '%' . mb_strtolower(trim($this->search)) . '%';
-            $query->where(function ($q) use ($term) {
-                $q->whereRaw('LOWER(pry_titulo) LIKE ?', [$term])
-                    ->orWhereRaw('LOWER(pry_resumen) LIKE ?', [$term]);
+            $search = trim($this->search);
+            $query->where(function ($q) use ($search) {
+                try {
+                    $q->whereRaw('MATCH(pry_titulo, pry_resumen) AGAINST(? IN BOOLEAN MODE)', [$search . '*']);
+                } catch (\Throwable) {
+                    $term = '%' . mb_strtolower($search) . '%';
+                    $q->whereRaw('LOWER(pry_titulo) LIKE ?', [$term])
+                        ->orWhereRaw('LOWER(pry_resumen) LIKE ?', [$term]);
+                }
             });
         }
 
@@ -295,6 +303,8 @@ class ProyectosPublicadosManager extends Component
     {
         $proyectos = $this->proyectosQuery()->get();
 
+        Proyecto::precargarTitulos($proyectos);
+
         $selectedProyecto = null;
         $comentarios = collect();
         if ($this->selectedPubId) {
@@ -302,6 +312,7 @@ class ProyectosPublicadosManager extends Component
             if (!$selectedProyecto) {
                 $this->selectedPubId = null;
             } else {
+                Proyecto::precargarTitulos(collect([$selectedProyecto]));
                 $comentarios = ComentarioProyecto::where('proyecto_id', $selectedProyecto->id)
                     ->orderBy('id', 'desc')
                     ->get();
@@ -312,7 +323,7 @@ class ProyectosPublicadosManager extends Component
 
         $organizations = $this->showEmailPanel ? $this->loadOrganizations() : collect();
 
-        $emailList = $this->showEmailPanel ? $this->buildEmailList() : [];
+        $emailList = $this->showEmailPanel ? $this->buildEmailList($organizations) : [];
 
         return view('livewire.proyectos-publicados-manager', [
             'proyectos' => $proyectos,
