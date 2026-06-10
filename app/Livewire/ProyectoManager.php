@@ -88,6 +88,12 @@ class ProyectoManager extends Component
     /** Nombre de la comunidad vinculada al grupo (solo lectura) */
     public ?string $comunidadNombreGrupo = null;
 
+    /** True si el usuario actual es lider del proyecto que esta editando */
+    public bool $esLider = false;
+
+    /** True cuando un lider esta actualizando documentos (modo solo subida) */
+    public bool $modoActualizacion = false;
+
     public function placeholder()
     {
         return <<<'HTML'
@@ -333,6 +339,12 @@ class ProyectoManager extends Component
         $this->fill($gestion->cargarParaEdicion($id));
         $this->viewMode = 'form';
 
+        // Detectar si el usuario actual es lider del proyecto
+        $user = auth()->user();
+        $proyecto = Proyecto::find($id);
+        $this->esLider = $proyecto ? $gestion->usuarioEsLiderDelProyecto($user, $proyecto) : false;
+        $this->modoActualizacion = $this->esLider && !$gestion->usuarioEsAdminEnSistema($user);
+
         // Reconstruir estado de grupo si el equipo seleccionado es un grupo de proyecto
         $clave = $this->equipo_seccion_clave ?? '';
         if (str_starts_with($clave, GrupoProyectoService::PREFIJO . ':')) {
@@ -363,12 +375,19 @@ class ProyectoManager extends Component
         $user = auth()->user();
         $estado = $this->estadoFormulario();
 
-        $this->validate(
-            $gestion->reglasValidacion($estado, $this->archivos_actuales, $user, $this->editingId !== null),
-            $this->messages()
-        );
+        if ($this->modoActualizacion) {
+            // Lider solo puede subir archivos, el resto es solo lectura
+            $this->validate([
+                'archivo_proyecto' => 'nullable|file|max:20480|mimes:pdf',
+            ]);
+        } else {
+            $this->validate(
+                $gestion->reglasValidacion($estado, $this->archivos_actuales, $user, $this->editingId !== null),
+                $this->messages()
+            );
+        }
 
-        $gestion->guardar(
+        $proyecto = $gestion->guardar(
             $this->editingId,
             $estado,
             $this->archivos_componentes,
@@ -377,8 +396,16 @@ class ProyectoManager extends Component
             $this->archivo_proyecto
         );
 
+        // Si lider actualizo, marcar
+        if ($this->modoActualizacion && $proyecto) {
+            $proyecto->update([
+                'actualizado_por_estudiante' => true,
+                'fecha_actualizacion_estudiante' => now(),
+            ]);
+        }
+
         $this->viewMode = 'list';
-        session()->flash('message', $this->editingId ? 'Proyecto actualizado con exito.' : 'Proyecto registrado con exito.');
+        $this->dispatch('notify', type: 'success', message: $this->modoActualizacion ? 'Documentos subidos con exito. El profesor sera notificado.' : ($this->editingId ? 'Proyecto actualizado con exito.' : 'Proyecto registrado con exito.'));
         $this->resetFormulario();
         $this->dispatch('refresh-icons');
     }
@@ -386,14 +413,14 @@ class ProyectoManager extends Component
     public function toggleStatus(int $id, ProyectoGestionService $gestion): void
     {
         $gestion->alternarEstado($id);
-        session()->flash('message', 'Estado del proyecto actualizado.');
+        $this->dispatch('notify', type: 'success', message: 'Estado del proyecto actualizado.');
         $this->dispatch('refresh-icons');
     }
 
     public function delete(int $id, ProyectoGestionService $gestion): void
     {
         $gestion->eliminar($id);
-        session()->flash('message', 'Proyecto eliminado correctamente.');
+        $this->dispatch('notify', type: 'success', message: 'Proyecto eliminado correctamente.');
         $this->dispatch('refresh-icons');
     }
 
@@ -401,9 +428,9 @@ class ProyectoManager extends Component
     {
         try {
             $gestion->aprobar($id);
-            session()->flash('message', 'Proyecto aprobado con exito.');
+            $this->dispatch('notify', type: 'success', message: 'Proyecto aprobado con exito.');
         } catch (AuthorizationException $e) {
-            session()->flash('message_error', $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: $e->getMessage());
         }
         $this->dispatch('refresh-icons');
     }
@@ -431,9 +458,9 @@ class ProyectoManager extends Component
         try {
             $gestion->rechazar((int) $this->selectedProjectId, $this->motivo_rechazo);
             $this->irAListado($this->listTab);
-            session()->flash('message', 'Proyecto rechazado.');
+            $this->dispatch('notify', type: 'success', message: 'Proyecto rechazado.');
         } catch (AuthorizationException $e) {
-            session()->flash('message_error', $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: $e->getMessage());
         }
         $this->dispatch('refresh-icons');
     }
@@ -443,9 +470,9 @@ class ProyectoManager extends Component
         try {
             $gestion->aprobar($id);
             $this->irAListado($this->listTab);
-            session()->flash('message', 'Proyecto aprobado con exito.');
+            $this->dispatch('notify', type: 'success', message: 'Proyecto aprobado con exito.');
         } catch (AuthorizationException $e) {
-            session()->flash('message_error', $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: $e->getMessage());
         }
         $this->dispatch('refresh-icons');
     }
@@ -455,11 +482,24 @@ class ProyectoManager extends Component
         $this->openReject($id);
     }
 
+    protected function usuarioEsLider(ProyectoGestionService $gestion): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        $userRoleService = app(\App\Services\UserRoleService::class);
+        $activeRole = $userRoleService->getActiveRole($user);
+        if ($userRoleService->roleMatches('administrador', $activeRole)
+            || $userRoleService->roleMatches('coordinador', $activeRole)) return false;
+        return $gestion->usuarioPuedeRegistrar($user);
+    }
+
     public function render(ProyectoGestionService $gestion)
     {
         $estado = $this->estadoFormulario();
         $page = $this->getPage();
         $user = auth()->user();
+
+        $esLiderGlobal = $this->usuarioEsLider($gestion);
 
         $datos = match ($this->viewMode) {
             'list' => $gestion->datosVistaListado([
@@ -480,6 +520,8 @@ class ProyectoManager extends Component
             'selectedProject' => $this->selectedProject,
             'canRegister' => $gestion->usuarioPuedeRegistrar($user),
             'esAdmin' => $gestion->usuarioEsAdminEnSistema($user),
+            'esLider' => $esLiderGlobal,
+            'modoActualizacion' => $this->modoActualizacion,
         ]));
     }
 

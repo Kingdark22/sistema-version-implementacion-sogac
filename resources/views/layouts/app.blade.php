@@ -184,10 +184,48 @@
             <x-sidebar />
         </div>
 
+        <!-- Modal de notificaciones -->
+        <div id="notifyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+            <div id="notifyModalContent" style="background:#fff; border-radius:8px; padding:25px 35px; max-width:450px; width:90%; text-align:center; box-shadow: 0 5px 25px rgba(0,0,0,0.3); position:relative;">
+                <div id="notifyModalIcon" style="font-size:48px; margin-bottom:10px;"></div>
+                <div id="notifyModalTitle" style="font-size:18px; font-weight:bold; margin-bottom:8px;"></div>
+                <div id="notifyModalMessage" style="font-size:14px; color:#555; margin-bottom:15px;"></div>
+                <button onclick="closeNotifyModal()" style="background:#8b0000; color:#fff; border:none; padding:8px 25px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:13px;">Aceptar</button>
+            </div>
+        </div>
+        <script>
+        function showNotifyModal(type, message) {
+            const modal = document.getElementById('notifyModal');
+            const icon = document.getElementById('notifyModalIcon');
+            const title = document.getElementById('notifyModalTitle');
+            const msg = document.getElementById('notifyModalMessage');
+            const content = document.getElementById('notifyModalContent');
+            modal.style.display = 'flex';
+            switch(type) {
+                case 'success': icon.innerHTML = '&#10004;'; icon.style.color = '#28a745'; title.textContent = 'Operaci&oacute;n exitosa'; content.style.borderTop = '5px solid #28a745'; break;
+                case 'error': icon.innerHTML = '&#10008;'; icon.style.color = '#dc3545'; title.textContent = 'Error'; content.style.borderTop = '5px solid #dc3545'; break;
+                case 'warning': icon.innerHTML = '&#9888;'; icon.style.color = '#ffc107'; title.textContent = 'Advertencia'; content.style.borderTop = '5px solid #ffc107'; break;
+                default: icon.innerHTML = '&#8505;'; icon.style.color = '#17a2b8'; title.textContent = 'Informaci&oacute;n'; content.style.borderTop = '5px solid #17a2b8';
+            }
+            msg.innerHTML = message;
+        }
+        function closeNotifyModal() {
+            document.getElementById('notifyModal').style.display = 'none';
+        }
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('notify', (data) => {
+                showNotifyModal(data.type || 'info', data.message || '');
+            });
+        });
+        document.addEventListener('livewire:navigated', () => {
+            Livewire.on('notify', (data) => {
+                showNotifyModal(data.type || 'info', data.message || '');
+            });
+        });
+        </script>
+
         <!-- Main Content (Centro) -->
         <main id="centro">
-            @livewire('notificaciones-banner')
-
             @hasSection('header')
             <div style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;">
                 <h2 style="font-size: 20px; font-weight: bold; color: #333; margin: 0; text-align: left;">@yield('header')</h2>

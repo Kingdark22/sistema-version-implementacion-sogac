@@ -611,6 +611,40 @@ class ProyectoGestionService
         return static::$roleCache[$key] = false;
     }
 
+    public function usuarioEsLiderDelProyecto(?User $user, Proyecto $proyecto): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+        $cedula = trim((string) $user->usu_cedula);
+        $clave = $proyecto->equipo_ref ?? '';
+
+        if ($clave === '') {
+            return false;
+        }
+
+        $partes = app(GrupoProyectoService::class)->parsearClave($clave);
+        if (!$partes || ($partes['tipo'] ?? '') !== GrupoProyectoService::PREFIJO) {
+            return false;
+        }
+
+        $grupo = \App\Models\GrupoProyectoModulo::find($partes['grp_codigo'] ?? 0);
+        if (!$grupo) {
+            return false;
+        }
+
+        $miembros = $grupo->grp_miembros ?? [];
+        foreach ($miembros as $m) {
+            $mCedula = trim((string) ($m['cedula'] ?? ''));
+            $rolId = (int) ($m['rol_id'] ?? 0);
+            if ($mCedula === $cedula && $rolId === IntranetEquipoSeccionService::ROL_LIDER) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function usuarioPuedeValidar(?User $user): bool
     {
         return false;

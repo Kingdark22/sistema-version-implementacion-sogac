@@ -49,6 +49,8 @@ class NavigationMenu
         $isStudent = in_array('estudiante', $availableRoles, true);
         $studentWithTeam = $isStudent && $user->perteneceAEquipo();
 
+        $pendingUpdatesCount = \App\Models\Proyecto::where('actualizado_por_estudiante', true)->count();
+
         $flags = [
             'isAdmin'              => $isAdmin,
             'isCoordinator'        => $isCoordinator,
@@ -63,6 +65,7 @@ class NavigationMenu
             'canManageSystemConfig'=> $isAdmin || $isCoordinator,
             'canManageOrganizaciones' => $this->roles->esGestionador($user),
             'canViewPublicaciones'   => $this->roles->esGestionador($user),
+            'pendingUpdatesCount'    => $pendingUpdatesCount,
         ];
 
         Cache::put($sessionKey, $flags, now()->addSeconds(self::CACHE_TTL));

@@ -36,31 +36,12 @@
     </style>
     <h2 class="titulo" style="margin-bottom: 20px; font-weight: bolder; margin-top: 10px;">Gestión de Proyectos</h2>
 
-    @if (session()->has('message'))
-        <div
-            style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 15px; border: 1px solid #c3e6cb; border-radius: 4px; font-weight: bold; text-align: center;">
-            {{ session('message') }}
-        </div>
-    @endif
-
-    @if (session()->has('message_error'))
-        <div
-            style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 15px; border: 1px solid #f5c6cb; border-radius: 4px; font-weight: bold; text-align: center;">
-            {{ session('message_error') }}
-        </div>
-    @endif
-
     @if ($viewMode === 'list')
         <div class="pgm-action-bar" style="display: flex; align-items: center; gap: 12px;">
-            @if ($canRegister ?? false)
+            @if (($esAdmin ?? false) || ($canRegister ?? false))
                 <button type="button" wire:click="iniciarRegistro" class="pgm-btn-registrar">
                     + REGISTRAR NUEVO PROYECTO
                 </button>
-            @else
-                <span class="pgm-aviso" style="font-weight: bold;">
-                    Registro no disponible: se requiere inscripción activa en una sección del lapso académico
-                    (intranet).
-                </span>
             @endif
         </div>
 
@@ -220,6 +201,9 @@
                                         {{ $p->comunidad->nombre ?? 'N/A' }}</span><br>
                                     <span style="font-size: 10px;">Línea:
                                         {{ $p->linea_investigacion?->nombre_investigacion ?? '' }}</span>
+                                    @if ($p->actualizado_por_estudiante)
+                                        <br><span style="background:#ffc107; padding:1px 6px; border-radius:3px; font-size:9px; font-weight:bold; color:#000;">Actualizado por líder</span>
+                                    @endif
                                 </td>
                                 <td align="center" style="padding: 5px;">
                                     @if ($p->estado_validacion === 'pendiente')
@@ -262,8 +246,9 @@
                                         @endif
                                         <button type="button" wire:click="edit({{ $p->id }})"
                                             class="pgm-btn-action pgm-btn-action--edit">
-                                            Editar
+                                            {{ $esLider ? 'Actualizar' : 'Editar' }}
                                         </button>
+                                        @if (!($esLider ?? false))
                                         <button type="button" wire:click="toggleStatus({{ $p->id }})"
                                             class="pgm-btn-action pgm-btn-action--toggle">
                                             {{ $p->estado_logico ? 'Inhabilitar' : 'Habilitar' }}
@@ -273,6 +258,7 @@
                                             class="pgm-btn-action pgm-btn-action--delete">
                                             Eliminar
                                         </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -357,13 +343,20 @@
 
         <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 20px; background-color: #FFF;">
             <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">
-                {{ $editingId ? 'Actualizar expediente' : 'Registrar proyecto' }}
+                {{ $modoActualizacion ? 'Subir documentos del proyecto' : ($editingId ? 'Actualizar expediente' : 'Registrar proyecto') }}
             </legend>
             <form wire:submit="save">
 
-                {{-- == SECCIÓN PRINCIPAL (siempre visible) == --}}
+                {{-- == SECCIÓN PRINCIPAL == --}}
                 <fieldset style="border: 1px solid #CCC; padding: 10px; margin-bottom: 15px;">
                     <legend style="font-weight: bold; font-size: 12px;">Datos del proyecto</legend>
+                    @if ($modoActualizacion)
+                        <div style="font-size: 12px; padding: 4px 0;">
+                            <b>Título:</b> {{ $titulo }}<br>
+                            <b>Resumen:</b> {{ $resumen }}<br>
+                            <b>Fecha subida:</b> {{ $fecha_subida }}
+                        </div>
+                    @else
                     <table width="100%" border="0" cellpadding="4" cellspacing="0" style="font-size: 12px;">
                         <tr>
                             <td width="20%"><b>Título:</b></td>
@@ -394,13 +387,13 @@
                             </td>
                         </tr>
                     </table>
+                    @endif
                 </fieldset>
 
-                {{-- == SECCIÓN DOCUMENTOS (siempre visible, arriba) == --}}
+                {{-- == SECCIÓN DOCUMENTOS == --}}
                 <fieldset style="border: 1px solid #CCC; padding: 10px; margin-bottom: 15px;">
                     <legend style="font-weight: bold; font-size: 12px;">Documentos del proyecto</legend>
                     <table width="100%" border="0" cellpadding="4" cellspacing="0" style="font-size: 12px;">
-                        {{-- Componentes documentales --}}
                         @if (($usaComponentes ?? false) && isset($componentes_requeridos) && count($componentes_requeridos) > 0)
                             @foreach ($componentes_requeridos as $comp)
                                 <tr>
@@ -431,7 +424,6 @@
                             @endforeach
                         @endif
 
-                        {{-- PDF general --}}
                         <tr>
                             <td valign="middle"><b>Documento PDF adicional:</b></td>
                             <td>
@@ -455,6 +447,7 @@
                     </table>
                 </fieldset>
 
+                @if (!$modoActualizacion)
                 {{-- == SECCIÓN EQUIPO Y COMUNIDAD (desplegable) == --}}
                 <div style="margin-bottom: 15px; border: 1px solid #CCC; border-radius: 4px;">
                     <button type="button" wire:click="toggleTeamFilters"
@@ -463,7 +456,6 @@
                     </button>
                     @if ($showTeamFilters)
                         <div style="padding:10px;">
-                            {{-- Filtros arriba --}}
                             @if ($esAdmin ?? false)
                                 <div style="padding:4px 0; margin-bottom:8px;">
                                     <select wire:model.live="filterLapsoEquipo" style="width: 32%;">
@@ -487,7 +479,6 @@
                                 </div>
                             @endif
 
-                            {{-- Dropdown de grupos --}}
                             <div style="margin-bottom: 8px;">
                                 <b>Seleccione el grupo de proyecto:</b><span class="obligatorio">*</span>
                                 <select wire:model.live="equipo_seccion_clave" style="width: 100%;">
@@ -507,7 +498,6 @@
                                 @enderror
                             </div>
 
-                            {{-- Equipo validado --}}
                             @if (!empty($equipoValidado))
                                 <div style="margin: 6px 0; padding: 6px; background: #d4edda; font-size: 10px;">
                                     <b>Validado:</b> {{ $equipoValidado->nombre }}
@@ -519,7 +509,6 @@
                                 </div>
                             @endif
 
-                            {{-- Comunidad --}}
                             <div style="margin-top: 10px;">
                                 <b>Comunidad:</b>
                                 @if (($esGrupoRegistrado ?? false) && $comunidadNombreGrupo)
@@ -600,7 +589,7 @@
                     </table>
                 </div>
 
-                {{-- == SECCIÓN AVANZADO (colapsable, oculta por defecto) == --}}
+                {{-- == SECCIÓN AVANZADO (colapsable) == --}}
                 <div style="margin-bottom: 15px; border: 1px solid #CCC; border-radius: 4px;">
                     <button type="button" wire:click="toggleAdvanced"
                         style="width:100%; background:#f5f5f5; border:none; padding:8px 12px; text-align:left; font-weight:bold; font-size:12px; cursor:pointer;">
@@ -635,10 +624,11 @@
                         </div>
                     @endif
                 </div>
+                @endif
 
                 <div style="text-align: center; margin-top: 20px;">
                     <button type="button" wire:click="cancel" class="pgm-btn-cancel" style="margin-right: 10px;">Cancelar</button>
-                    <button type="submit" class="pgm-btn-save">{{ $editingId ? 'Guardar cambios' : 'Registrar proyecto' }}</button>
+                    <button type="submit" class="pgm-btn-save">{{ $modoActualizacion ? 'Subir documentos' : ($editingId ? 'Guardar cambios' : 'Registrar proyecto') }}</button>
                 </div>
             </form>
         </fieldset>

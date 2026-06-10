@@ -23,6 +23,9 @@ class Proyecto extends RepositorioModel
         'documentos',
         'estado_validacion',
         'motivo_rechazo',
+        'actualizado_por_estudiante',
+        'fecha_actualizacion_estudiante',
+        'creador_cedula',
         'comunidad_id',
         'equipo_ref',
     ];
@@ -67,6 +70,8 @@ class Proyecto extends RepositorioModel
         'estado_logico' => 'boolean',
         'asignacion_ct' => 'boolean',
         'calificacion' => 'integer',
+        'actualizado_por_estudiante' => 'boolean',
+        'fecha_actualizacion_estudiante' => 'datetime',
     ];
     
 
